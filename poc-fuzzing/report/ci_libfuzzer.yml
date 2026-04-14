@@ -1,0 +1,68 @@
+# GitHub Actions — libFuzzer CI/CD snippet
+# Lines of YAML: ~55 | Docker: none (uses ubuntu-latest runner)
+# Exits cleanly on timeout: YES (-max_total_time guarantees exit)
+
+name: Fuzz cJSON (libFuzzer)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 2 * * 1'   # weekly Monday 02:00 UTC
+
+jobs:
+  libfuzzer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang + libFuzzer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y clang llvm
+
+      - name: Restore corpus cache
+        uses: actions/cache@v4
+        with:
+          path: corpus/cjson
+          key: corpus-cjson-libfuzzer-${{ github.ref_name }}
+          restore-keys: |
+            corpus-cjson-libfuzzer-
+
+      - name: Build fuzz target
+        run: |
+          mkdir -p build
+          clang -fsanitize=fuzzer,address,undefined \
+                -g -O1 \
+                harnesses/fuzz_cjson.c targets/cjson/cJSON.c \
+                -I targets/cjson/ \
+                -o build/fuzz_cjson_libfuzzer
+
+      - name: Run 5-minute fuzzing campaign
+        run: |
+          mkdir -p findings/libfuzzer/cjson
+          ./build/fuzz_cjson_libfuzzer \
+            -max_total_time=300 \
+            -print_final_stats=1 \
+            -artifact_prefix=findings/libfuzzer/cjson/ \
+            corpus/cjson/ \
+            2>&1 | tee findings/libfuzzer/cjson/run.log
+
+      - name: Fail if new crashes found
+        run: |
+          if ls findings/libfuzzer/cjson/crash-* 2>/dev/null | grep -q .; then
+            echo "::error::New crashes detected by libFuzzer!"
+            ls -la findings/libfuzzer/cjson/crash-*
+            exit 1
+          fi
+          echo "No crashes found."
+
+      - name: Save crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: libfuzzer-crashes
+          path: findings/libfuzzer/cjson/crash-*

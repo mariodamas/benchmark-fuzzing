@@ -1,0 +1,43 @@
+start_time        : 1776157698
+last_update       : 1776159553
+run_time          : 1854
+fuzzer_pid        : 10501
+cycles_done       : 78
+cycles_wo_finds   : 1
+time_wo_finds     : 269
+execs_done        : 83014343
+execs_per_sec     : 44759.70
+execs_ps_last_min : 50683.60
+corpus_count      : 495
+corpus_favored    : 52
+corpus_found      : 72
+corpus_imported   : 0
+corpus_variable   : 0
+max_depth         : 4
+cur_item          : 341
+pending_favs      : 0
+pending_total     : 33
+stability         : 100.00%
+bitmap_cvg        : 11.44%
+saved_crashes     : 0
+saved_hangs       : 0
+last_find         : 1776159522
+last_crash        : 0
+last_hang         : 0
+execs_since_crash : 83014343
+exec_timeout      : 1000
+slowest_exec_ms   : 0
+peak_rss_mb       : 667
+cpu_affinity      : 0
+edges_found       : 195
+total_edges       : 1704
+var_byte_count    : 0
+havoc_expansion   : 5
+auto_dict_entries : 0
+testcache_size    : 249750
+testcache_count   : 495
+testcache_evict   : 0
+afl_banner        : /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_cjson_afl
+afl_version       : ++4.09c
+target_mode       : persistent shmem_testcase deferred 
+command_line      : afl-fuzz -i /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/corpus/cjson_afl/ -o /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/findings/afl/cjson/ -t 1000 -- /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_cjson_afl @@

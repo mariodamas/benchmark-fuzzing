@@ -1,0 +1,43 @@
+start_time        : 1776160544
+last_update       : 1776160764
+run_time          : 220
+fuzzer_pid        : 18041
+cycles_done       : 25
+cycles_wo_finds   : 25
+time_wo_finds     : 0
+execs_done        : 16368270
+execs_per_sec     : 74362.36
+execs_ps_last_min : 69579.78
+corpus_count      : 464
+corpus_favored    : 1
+corpus_found      : 0
+corpus_imported   : 0
+corpus_variable   : 0
+max_depth         : 1
+cur_item          : 46
+pending_favs      : 0
+pending_total     : 0
+stability         : 100.00%
+bitmap_cvg        : 27.27%
+saved_crashes     : 0
+saved_hangs       : 0
+last_find         : 0
+last_crash        : 0
+last_hang         : 0
+execs_since_crash : 16368270
+exec_timeout      : 2000
+slowest_exec_ms   : 0
+peak_rss_mb       : 356
+cpu_affinity      : 0
+edges_found       : 3
+total_edges       : 11
+var_byte_count    : 0
+havoc_expansion   : 5
+auto_dict_entries : 0
+testcache_size    : 443224
+testcache_count   : 455
+testcache_evict   : 0
+afl_banner        : /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_afl
+afl_version       : ++4.09c
+target_mode       : persistent shmem_testcase deferred 
+command_line      : afl-fuzz -i /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/corpus/wolfssl/ -o /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/findings/afl/wolfssl/ -t 2000 -- /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_afl @@

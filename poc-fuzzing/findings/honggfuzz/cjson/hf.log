@@ -1,0 +1,8 @@
+Start time:'2026-04-14.19.40.25' bin:'/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_cjson_hf_plain', input:'/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/corpus/cjson/', output:'/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/corpus/cjson/', persistent:false, stdin:false, mutation_rate:5, timeout:1, max_runs:0, threads:1, minimize:false, git_commit:01713bdad7307acea887517f2468b4a9961f9806
+[2J[500BParsed /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_cjson_hf_plain: found 59 32-bit and 50 64-bit interesting values
+Entering phase: Static
+Launched new fuzzing thread, no. #0
+Maximum run time reached, terminating
+Terminating thread no. #0, left: 0
+Summary iterations:301404 time:1801 speed:167 crashes_count:0 timeout_count:0 new_units_added:0 slowest_unit_ms:82 guard_nb:0 branch_coverage_percent:0 peak_rss_mb:7
+[r[500B

@@ -1,0 +1,38 @@
+=====================================================================
+TIME: 2026-04-14.19:26:49
+=====================================================================
+FUZZER ARGS:
+ mutationsPerRun : 5
+ externalCmd     : NULL
+ fuzzStdin       : FALSE
+ timeout         : 5 (sec)
+ ignoreAddr      : (nil)
+ ASLimit         : 0 (MiB)
+ RSSLimit        : 0 (MiB)
+ DATALimit       : 0 (MiB)
+ wordlistFile    : NULL
+ dynFileMethod   : 
+ fuzzTarget      : /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_honggfuzz 
+CRASH:
+DESCRIPTION: 
+ORIG_FNAME: 000f7a068e912b3742449c51c1f9e051c296d198
+FUZZ_FNAME: /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/findings/honggfuzz/wolfssl//SIGABRT.PC.7ffff7c9eb2c.STACK.c9036f1a9.CODE.-6.ADDR.0.INSTR.mov____%eax,%r14d.fuzz
+PID: 88948
+SIGNAL: SIGABRT (6)
+PC: 0x7ffff7c9eb2c
+FAULT ADDRESS: 0x0
+INSTRUCTION: mov____%eax,%r14d
+STACK HASH: 0000000c9036f1a9
+STACK:
+ <0x00007ffff7c4527e> [func:UNKNOWN file: line:0 module:/usr/lib/x86_64-linux-gnu/libc.so.6]
+ <0x00007ffff7c288ff> [func:UNKNOWN file: line:0 module:/usr/lib/x86_64-linux-gnu/libc.so.6]
+ <0x000055555557bbdb> [func:UNKNOWN file: line:0 module:/mnt/c/Users/mario/Desktop/INFORMATICA/4º]
+ <0x0000555555579d65> [func:UNKNOWN file: line:0 module:/mnt/c/Users/mario/Desktop/INFORMATICA/4º]
+ <0x000055555556c6d5> [func:UNKNOWN file: line:0 module:/mnt/c/Users/mario/Desktop/INFORMATICA/4º]
+ <0x000055555556c929> [func:UNKNOWN file: line:0 module:/mnt/c/Users/mario/Desktop/INFORMATICA/4º]
+ <0x000055555558a0b2> [func:UNKNOWN file: line:0 module:/mnt/c/Users/mario/Desktop/INFORMATICA/4º]
+ <0x0000555555589da5> [func:UNKNOWN file: line:0 module:/mnt/c/Users/mario/Desktop/INFORMATICA/4º]
+ <0x000055555558ee4a> [func:UNKNOWN file: line:0 module:/mnt/c/Users/mario/Desktop/INFORMATICA/4º]
+ <0x00007ffff7fca873> [func:UNKNOWN file: line:0 module:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2]
+ <0x00007ffff7fe45a0> [func:UNKNOWN file: line:0 module:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2]
+=====================================================================

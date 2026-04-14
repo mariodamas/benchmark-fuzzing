@@ -1,0 +1,60 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3787144217
+INFO: Loaded 1 modules   (107146 inline 8-bit counters): 107146 [0x638e3d9f2af0, 0x638e3da0cd7a), 
+INFO: Loaded 1 PC tables (107146 PCs): 107146 [0x638e3da0cd80,0x638e3dbaf620), 
+/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_libfuzzer: Running 1 inputs 1 time(s) each.
+Running: /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/corpus/wolfssl/ACCVRAIZ1.der
+=================================================================
+==17624==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7ddc5e100408 at pc 0x638e3d3b7fc9 bp 0x7ffdbacfcee0 sp 0x7ffdbacfc6b0
+WRITE of size 1872 at 0x7ddc5e100408 thread T0
+    #0 0x638e3d3b7fc8 in __asan_memset (/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_libfuzzer+0x56afc8) (BuildId: 1e62f2764fc953019163db84e2eaed845c9cbc99)
+    #1 0x638e3d40f988 in InitDecodedCert_ex /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/targets/wolfssl/wolfcrypt/src/asn.c:11101:9
+    #2 0x638e3d3f854b in LLVMFuzzerTestOneInput /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/harnesses/fuzz_wolfssl_x509.c:41:5
+    #3 0x638e3d305d74 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_libfuzzer+0x4b8d74) (BuildId: 1e62f2764fc953019163db84e2eaed845c9cbc99)
+    #4 0x638e3d2eeea6 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) (/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_libfuzzer+0x4a1ea6) (BuildId: 1e62f2764fc953019163db84e2eaed845c9cbc99)
+    #5 0x638e3d2f495a in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) (/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_libfuzzer+0x4a795a) (BuildId: 1e62f2764fc953019163db84e2eaed845c9cbc99)
+    #6 0x638e3d31f116 in main (/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_libfuzzer+0x4d2116) (BuildId: 1e62f2764fc953019163db84e2eaed845c9cbc99)
+    #7 0x7ddc5fc2a1c9  (/lib/x86_64-linux-gnu/libc.so.6+0x2a1c9) (BuildId: 8e9fd827446c24067541ac5390e6f527fb5947bb)
+    #8 0x7ddc5fc2a28a in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x2a28a) (BuildId: 8e9fd827446c24067541ac5390e6f527fb5947bb)
+    #9 0x638e3d2e9a74 in _start (/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_libfuzzer+0x49ca74) (BuildId: 1e62f2764fc953019163db84e2eaed845c9cbc99)
+
+Address 0x7ddc5e100408 is located in stack of thread T0 at offset 1032 in frame
+    #0 0x638e3d3f8437 in LLVMFuzzerTestOneInput /mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/harnesses/fuzz_wolfssl_x509.c:32
+
+  This frame has 1 object(s):
+    [32, 1032) 'cert' (line 35) <== Memory access at offset 1032 overflows this variable
+HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
+      (longjmp and C++ exceptions *are* supported)
+SUMMARY: AddressSanitizer: stack-buffer-overflow (/mnt/c/Users/mario/Desktop/INFORMATICA/4º Curso/TFG/fuzzing_benchmark/poc-fuzzing/build/fuzz_wolfssl_libfuzzer+0x56afc8) (BuildId: 1e62f2764fc953019163db84e2eaed845c9cbc99) in __asan_memset
+Shadow bytes around the buggy address:
+  0x7ddc5e100180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7ddc5e100200: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7ddc5e100280: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7ddc5e100300: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7ddc5e100380: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0x7ddc5e100400: 00[f3]f3 f3 f3 f3 f3 f3 f3 f3 f3 f3 f3 f3 f3 f3
+  0x7ddc5e100480: f3 f3 f3 f3 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7ddc5e100500: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7ddc5e100580: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7ddc5e100600: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7ddc5e100680: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==17624==ABORTING
