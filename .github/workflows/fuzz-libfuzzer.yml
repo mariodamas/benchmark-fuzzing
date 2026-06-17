@@ -1,0 +1,67 @@
+name: Fuzz cJSON — libFuzzer
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 2 * * 1'   # lunes 02:00 UTC
+
+jobs:
+  libfuzzer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: poc-fuzzing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar clang + libFuzzer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y clang llvm
+
+      - name: Restaurar caché del corpus
+        uses: actions/cache@v4
+        with:
+          path: poc-fuzzing/corpus/cjson
+          key: corpus-cjson-libfuzzer-${{ github.ref_name }}
+          restore-keys: |
+            corpus-cjson-libfuzzer-
+
+      - name: Compilar harness
+        run: |
+          mkdir -p build
+          clang -fsanitize=fuzzer,address,undefined \
+                -g -O1 \
+                harnesses/fuzz_cjson.c targets/cjson/cJSON.c \
+                -I targets/cjson/ \
+                -o build/fuzz_cjson_libfuzzer
+
+      - name: Ejecutar campaña (5 min)
+        run: |
+          mkdir -p findings/libfuzzer/cjson
+          ./build/fuzz_cjson_libfuzzer \
+            -max_total_time=300 \
+            -print_final_stats=1 \
+            -artifact_prefix=findings/libfuzzer/cjson/ \
+            corpus/cjson/ \
+            2>&1 | tee findings/libfuzzer/cjson/run_libfuzzer_cjson.log
+
+      - name: Fallar si se detectan crashes nuevos
+        run: |
+          if ls findings/libfuzzer/cjson/crash-* 2>/dev/null | grep -q .; then
+            echo "::error::Crashes detectados por libFuzzer"
+            ls -la findings/libfuzzer/cjson/crash-*
+            exit 1
+          fi
+          echo "Sin crashes."
+
+      - name: Subir artefactos de crash
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: libfuzzer-crashes
+          path: poc-fuzzing/findings/libfuzzer/cjson/crash-*

@@ -1,0 +1,79 @@
+name: Fuzz cJSON — AFL++
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 3 * * 1'   # lunes 03:00 UTC
+
+jobs:
+  aflplusplus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: poc-fuzzing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar AFL++ + clang
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y afl++ clang
+
+      - name: Configurar kernel para AFL++
+        run: |
+          echo core | sudo tee /proc/sys/kernel/core_pattern
+          echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null || true
+
+      - name: Restaurar caché del corpus
+        uses: actions/cache@v4
+        with:
+          path: poc-fuzzing/findings/afl/cjson/queue
+          key: corpus-cjson-afl-${{ github.ref_name }}
+          restore-keys: |
+            corpus-cjson-afl-
+
+      - name: Compilar harness (AFL++)
+        run: |
+          mkdir -p build
+          AFL_USE_ASAN=1 AFL_USE_UBSAN=1 \
+          afl-clang-fast -g -O1 \
+                harnesses/fuzz_cjson.c targets/cjson/cJSON.c \
+                -I targets/cjson/ \
+                -o build/fuzz_cjson_afl
+
+      - name: Ejecutar campaña (5 min)
+        run: |
+          mkdir -p findings/afl/cjson
+          AFL_NO_UI=1 timeout 310 \
+            afl-fuzz \
+              -i corpus/cjson/ \
+              -o findings/afl/cjson/ \
+              -t 1000 \
+              -- ./build/fuzz_cjson_afl @@ || true
+
+      - name: Fallar si se detectan crashes nuevos
+        run: |
+          if ls findings/afl/cjson/default/crashes/id:* 2>/dev/null | grep -q .; then
+            echo "::error::Crashes detectados por AFL++"
+            ls -la findings/afl/cjson/default/crashes/
+            exit 1
+          fi
+          echo "Sin crashes."
+
+      - name: Subir artefactos de crash
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: afl-crashes
+          path: poc-fuzzing/findings/afl/cjson/default/crashes/
+
+      - name: Subir estadísticas del fuzzer
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: afl-stats
+          path: poc-fuzzing/findings/afl/cjson/default/fuzzer_stats

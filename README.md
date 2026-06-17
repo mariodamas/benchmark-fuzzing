@@ -9,54 +9,84 @@
 
 ---
 
-## Estructura del repositorio
+## Descripción
 
-```
-poc-fuzzing/
-├── targets/
-│   ├── cjson/              # cJSON 1.7.12 (fuente)
-│   └── wolfssl/            # wolfSSL 5.6.3 (fuente + build)
-├── harnesses/
-│   ├── fuzz_cjson.c        # Harness LLVMFuzzerTestOneInput para cJSON
-│   └── fuzz_wolfssl_x509.c # Harness X.509/ASN.1 para wolfSSL
-├── corpus/
-│   ├── cjson/              # 6 seeds JSON estructuralmente diversos
-│   ├── cjson_afl/          # Copia del corpus para AFL++ (evita race condition)
-│   └── wolfssl/            # 146 certificados DER del sistema
-├── build/                  # Binarios compilados (generados)
-├── findings/
-│   ├── libfuzzer/          # Logs y corpus de campañas libFuzzer
-│   ├── afl/                # Logs y corpus de campañas AFL++
-│   └── honggfuzz/          # Logs y workspace de campañas Honggfuzz
-├── coverage/               # Reportes llvm-cov y afl-showmap
-└── report/
-    ├── decision_fuzzing.md # Documento de decisión técnica (resultado principal)
-    ├── ci_libfuzzer.yml    # Snippet GitHub Actions para libFuzzer
-    └── ci_aflplusplus.yml  # Snippet GitHub Actions para AFL++
-```
+Este repositorio contiene el **benchmark de fuzzers** desarrollado como prueba de concepto (POC-03) del TFG. Se evalúan tres herramientas de fuzzing — **libFuzzer**, **AFL++** y **Honggfuzz** — sobre dos targets representativos de software C/C++ embebido:
+
+| Target | Versión | CVE objetivo |
+|--------|---------|-------------|
+| cJSON | 1.7.12 | CVE-2019-11835 (heap buffer overflow) |
+| wolfSSL | 5.6.3 | CVE-2023-3724, CVE-2022-42905 (ASN.1/X.509) |
+
+La decisión técnica resultante se documenta en [`poc-fuzzing/report/decision_fuzzing.md`](poc-fuzzing/report/decision_fuzzing.md).
 
 ---
 
-## Requisitos del entorno
+## Estructura del repositorio
+
+```
+fuzzing_benchmark/                  ← raíz del repositorio
+├── .github/
+│   └── workflows/
+│       ├── fuzz-libfuzzer.yml      # Pipeline CI/CD — libFuzzer (cJSON)
+│       └── fuzz-aflplusplus.yml    # Pipeline CI/CD — AFL++ (cJSON)
+├── README.md
+├── RESULTS.md                      # Resumen ejecutivo de resultados
+└── poc-fuzzing/
+    ├── harnesses/
+    │   ├── fuzz_cjson.c            # Harness LLVMFuzzerTestOneInput (cJSON)
+    │   └── fuzz_wolfssl_x509.c     # Harness X.509/ASN.1 (wolfSSL)
+    ├── targets/
+    │   ├── cjson/                  # cJSON 1.7.12 (fuente vendorizada)
+    │   └── wolfssl/                # wolfSSL 5.6.3 (fuente vendorizada)
+    ├── corpus/
+    │   ├── cjson/                  # 6 seeds JSON estructuralmente diversos
+    │   ├── cjson_afl/              # Copia del corpus para AFL++ (evita race condition, R9)
+    │   └── wolfssl/                # 146 certificados DER del almacén del sistema
+    ├── build/                      # Binarios compilados (generados — no versionados)
+    ├── findings/
+    │   ├── libfuzzer/cjson/        # Logs libFuzzer — cJSON
+    │   ├── libfuzzer/wolfssl/      # Logs libFuzzer — wolfSSL
+    │   ├── afl/
+    │   │   ├── cjson/              # Logs AFL++ — cJSON
+    │   │   ├── wolfssl_noinst/     # Campaña AFL++ wolfSSL v1 (INVÁLIDA — sin instrumentación)
+    │   │   └── wolfssl_instrumented/ # Campaña AFL++ wolfSSL v2 (resultado oficial)
+    │   ├── honggfuzz/cjson/        # Logs Honggfuzz — cJSON
+    │   ├── honggfuzz/wolfssl/      # Logs Honggfuzz — wolfSSL
+    │   └── crashes_dedup/          # Análisis de ausencia de crashes
+    ├── coverage/
+    │   ├── cjson/                  # Reportes llvm-cov y afl-showmap — cJSON
+    │   └── wolfssl/                # Reportes llvm-cov — wolfSSL
+    └── report/
+        ├── decision_fuzzing.md     # Documento de decisión técnica (resultado principal)
+        ├── ci_libfuzzer.yml        # Referencia de snippet CI — libFuzzer
+        └── ci_aflplusplus.yml      # Referencia de snippet CI — AFL++
+```
+
+> **Nota:** los directorios `build/`, `corpus/` y `targets/honggfuzz/` están excluidos del repositorio mediante `.gitignore` por su tamaño.
+
+---
+
+## Entorno de desarrollo
 
 Entorno probado: **WSL2 — Ubuntu 24.04 LTS** sobre Windows 11.
 
 ```bash
-# Compilador
+# Compilador LLVM/Clang
 sudo apt-get install -y clang llvm
 
 # AFL++
 sudo apt-get install -y afl++
 
-# wolfSSL build deps
+# Dependencias de build de wolfSSL
 sudo apt-get install -y autoconf automake libtool
 
-# Honggfuzz build deps (compilar desde fuente)
+# Dependencias para compilar Honggfuzz desde fuente
 sudo apt-get install -y binutils-dev libunwind-dev libblocksruntime-dev make
 
 # Verificar versiones
-clang --version        # >= 14
-afl-fuzz --version     # >= 4.0
+clang --version         # >= 14
+afl-fuzz --version      # >= 4.0
 llvm-cov --version
 llvm-profdata --version
 ```
@@ -70,9 +100,15 @@ make -j$(nproc) CC=clang
 export HF=/home/$USER/honggfuzz
 ```
 
+> **Advertencia WSL2:** Honggfuzz en modo instrumentado (`hfuzz-clang`) usa ptrace + shared memory, incompatible con WSL2. LeakSanitizer (integrado en ASan) también conflicta con ptrace. Solución: compilar sin sanitizers y ejecutar con `--noinst`. Ver §3.4 de [`report/decision_fuzzing.md`](poc-fuzzing/report/decision_fuzzing.md).
+
 ---
 
-## Paso 1 — Clonar y preparar los targets
+## Paso 1 — Preparar los targets
+
+> Los fuentes de cJSON y wolfSSL están vendorizados en `targets/`. No es necesario clonarlos de nuevo. Los pasos siguientes asumen que los fuentes ya están presentes.
+
+Si se parten de cero:
 
 ```bash
 cd poc-fuzzing
@@ -93,6 +129,7 @@ cd targets/wolfssl && git checkout v5.6.3-stable && cd ../..
 ### cJSON — libFuzzer
 
 ```bash
+mkdir -p build
 clang -fsanitize=fuzzer,address,undefined -g -O1 \
     harnesses/fuzz_cjson.c \
     targets/cjson/cJSON.c \
@@ -114,7 +151,6 @@ afl-clang-fast -g -O1 \
 ### cJSON — Honggfuzz (modo noinst, requerido en WSL2)
 
 ```bash
-# Wrapper externo que lee el input de un fichero (argv[1])
 clang -g -O1 \
     harnesses/fuzz_cjson_hf.c \
     targets/cjson/cJSON.c \
@@ -122,13 +158,11 @@ clang -g -O1 \
     -o build/fuzz_cjson_hf_plain
 ```
 
-> **Nota WSL2**: Honggfuzz en modo instrumentado (`hfuzz-clang`) usa ptrace + shared memory,
-> incompatible con WSL2. LeakSanitizer (parte de ASan) también conflicta con ptrace.
-> Solución: compilar sin sanitizers y ejecutar con `--noinst`. Ver §3.4 de `report/decision_fuzzing.md`.
-
 ---
 
-## Paso 3 — Compilar wolfSSL (requiere build por fuzzer)
+## Paso 3 — Compilar wolfSSL
+
+wolfSSL debe compilarse como librería estática con el compilador del fuzzer correspondiente.
 
 ### wolfSSL — libFuzzer
 
@@ -151,7 +185,9 @@ clang -fsanitize=fuzzer,address,undefined -g -O1 \
     -o build/fuzz_wolfssl_libfuzzer
 ```
 
-### wolfSSL — AFL++ (requiere recompilar la librería con afl-clang-fast)
+### wolfSSL — AFL++
+
+> **Importante:** `libwolfssl.a` debe recompilarse con `afl-clang-fast`. Sin esto, AFL++ solo captura ~3 edges del harness (ver riesgo R8 en [`report/decision_fuzzing.md`](poc-fuzzing/report/decision_fuzzing.md)).
 
 ```bash
 cd targets/wolfssl && make distclean
@@ -172,12 +208,14 @@ afl-clang-fast -g -O1 \
     -o build/fuzz_wolfssl_afl
 ```
 
-> **Importante**: compilar `libwolfssl.a` con el mismo compilador que el harness.
-> Usar `afl-showmap` para verificar instrumentación antes de la campaña:
-> `afl-showmap -o /dev/stdout -t 1000 -- build/fuzz_wolfssl_afl < corpus/wolfssl/cert0.der`
-> Debe mostrar ≥ 100 tuples. Si muestra < 10, la librería no está instrumentada.
+Verificar instrumentación antes de la campaña:
 
-### wolfSSL — Honggfuzz (noinst, plain clang)
+```bash
+afl-showmap -o /dev/stdout -t 1000 -- build/fuzz_wolfssl_afl < corpus/wolfssl/cert0.der
+# Debe mostrar >= 100 tuples. Si muestra < 10, libwolfssl.a no está instrumentada.
+```
+
+### wolfSSL — Honggfuzz (noinst)
 
 ```bash
 cd targets/wolfssl && make distclean
@@ -203,12 +241,12 @@ clang -g -O1 \
 ### cJSON (incluido en el repositorio)
 
 ```
-corpus/cjson/01_empty.json        → {}
-corpus/cjson/02_simple.json       → {"key":"value"}
-corpus/cjson/03_nested.json       → {"a":[1,2,{"b":true}]}
-corpus/cjson/04_unicode.json      → {"x":"\u0041"}
-corpus/cjson/05_deep.json         → {"a":{"b":{"c":{"d":{"e":1}}}}}
-corpus/cjson/06_numbers.json      → {"n":1.7976931348623157e+308}
+corpus/cjson/01_empty.json      → {}
+corpus/cjson/02_simple.json     → {"key":"value"}
+corpus/cjson/03_nested.json     → {"a":[1,2,{"b":true}]}
+corpus/cjson/04_unicode.json    → {"x":"A"}
+corpus/cjson/05_deep.json       → {"a":{"b":{"c":{"d":{"e":1}}}}}
+corpus/cjson/06_numbers.json    → {"n":1.7976931348623157e+308}
 ```
 
 ### wolfSSL — certificados DER del sistema
@@ -224,7 +262,7 @@ echo "Corpus wolfSSL: $(ls corpus/wolfssl/*.der | wc -l) certificados"
 
 ---
 
-## Paso 5 — Ejecutar las campañas (30 minutos cada una)
+## Paso 5 — Ejecutar las campañas (30 minutos)
 
 ### libFuzzer — cJSON
 
@@ -242,7 +280,7 @@ mkdir -p findings/libfuzzer/cjson
 
 ```bash
 mkdir -p findings/afl/cjson
-cp -r corpus/cjson/ corpus/cjson_afl/   # corpus separado para AFL++
+cp -r corpus/cjson/ corpus/cjson_afl/
 echo core | sudo tee /proc/sys/kernel/core_pattern
 
 AFL_NO_UI=1 AFL_SKIP_CPUFREQ=1 \
@@ -364,39 +402,30 @@ llvm-cov report ./build/fuzz_cjson_cov \
 | Crashes únicos | 0 | 0 | 0 |
 | Peak RSS | 448 MB | 430 MB | 8 MB |
 
-> ⚠ Honggfuzz ejecutado en modo `--noinst` (sin instrumentación de cobertura) por
-> incompatibilidad de ptrace con WSL2. Los 167–171 exec/s reflejan overhead de fork
-> externo, no el rendimiento real del modo instrumentado (~10.000–100.000 exec/s en Linux nativo).
+> ⚠ Honggfuzz ejecutado en modo `--noinst` por incompatibilidad de ptrace con WSL2. Los 167–171 exec/s reflejan overhead de fork externo, no el rendimiento real del modo instrumentado (~10.000–100.000 exec/s en Linux nativo).
 
 ### Crashes
 
-**Ningún fuzzer encontró crashes en campañas de 30 minutos.** Resultado esperado y válido:
+**Ningún fuzzer encontró crashes en campañas de 30 minutos.** Resultado esperado y documentado:
 
-- **CVE-2019-11835 (cJSON)**: requiere input específico que active el path vulnerable en `parse_string()`. Sin seed dirigido, la probabilidad de alcanzarlo en 30 min es baja.
-- **CVE-2023-3724 / CVE-2022-42905 (wolfSSL)**: superficie ASN.1 con miles de branches de validación; necesita corpus DER malformado específico y campañas de varias horas.
+- **CVE-2019-11835 (cJSON):** requiere surrogate pair UTF-16 exacto al límite del buffer interno. Sin seed dirigido, la probabilidad de alcanzarlo en 30 min es baja. Ver [`findings/crashes_dedup/cjson/README.md`](poc-fuzzing/findings/crashes_dedup/cjson/README.md).
+- **CVE-2023-3724 / CVE-2022-42905 (wolfSSL):** superficie ASN.1 con miles de ramas de validación; necesita corpus DER malformado específico y campañas de varias horas.
 
 ---
 
 ## Decisión técnica
 
-| Escenario | Fuzzer elegido | Razón |
-|-----------|---------------|-------|
-| **CI/CD pipeline** (GitHub Actions) | **libFuzzer** | Sale limpio con `-max_total_time=N`; 0 config de kernel; mayor cobertura por ejecución; mismo harness para ambos fuzzers |
-| **Campañas offline** (noche/semana) | **AFL++** | ~5× más throughput; cmplog/redqueen para paths complejos; ideal para campañas >1h |
-| **Honggfuzz** | Descartado (WSL2) | Requiere ptrace; incompatible con LSan/ASan en WSL2; viable en Linux nativo |
+| Escenario | Fuzzer recomendado | Razón |
+|-----------|--------------------|-------|
+| **CI/CD pipeline** (GitHub Actions) | **libFuzzer** | Terminación limpia con `-max_total_time=N`; sin configuración de kernel; mayor cobertura por ejecución; mismo harness para ambos fuzzers |
+| **Campañas offline** (>1h) | **AFL++** | ~5× más throughput; cmplog/redqueen para paths complejos |
+| **Honggfuzz** | Descartado en WSL2 | Requiere ptrace; incompatible con LSan/ASan en WSL2; viable en Linux nativo |
 
 El harness `LLVMFuzzerTestOneInput` compila para libFuzzer y AFL++ **sin modificación**, maximizando la reutilización entre CI y campañas offline.
 
----
+Para el análisis completo (metodología, análisis cualitativo, tabla de riesgos R1–R11, trazabilidad normativa), ver [`poc-fuzzing/report/decision_fuzzing.md`](poc-fuzzing/report/decision_fuzzing.md).
 
-## Documento de decisión completo
-
-Ver [`report/decision_fuzzing.md`](report/decision_fuzzing.md) — incluye:
-- Metodología completa del benchmark
-- Análisis cualitativo (CI/CD, sanitizers, mantenibilidad, licencias)
-- Tabla de riesgos (R1–R11)
-- Obstáculo WSL2 de Honggfuzz (§3.4)
-- Trazabilidad IEC 62443-4-1 SVV-3 · NIST SSDF RV.1, RV.3
+Los pipelines CI/CD funcionales están en [`.github/workflows/`](.github/workflows/).
 
 ---
 

@@ -60,7 +60,7 @@ El harness wolfSSL (`harnesses/fuzz_wolfssl_x509.c`) usa asignación en heap par
 
 - Duración: exactamente 30 minutos (`-max_total_time=1800` en libFuzzer; `timeout 1860` en AFL++; `--run_time 1800` en Honggfuzz)
 - Ejecución secuencial en la misma máquina
-- Logs completos: `findings/libfuzzer/cjson/run.log`, `findings/afl/cjson/run.log`, `findings/honggfuzz/cjson/run.log`, `findings/libfuzzer/wolfssl/run.log`, `findings/afl/wolfssl_v2/run.log`, `findings/honggfuzz/wolfssl/run.log`
+- Logs completos: `findings/libfuzzer/cjson/run_libfuzzer_cjson.log`, `findings/afl/cjson/run_afl_cjson.log`, `findings/honggfuzz/cjson/run_honggfuzz_cjson.log`, `findings/libfuzzer/wolfssl/run_libfuzzer_wolfssl.log`, `findings/afl/wolfssl_instrumented/run_afl_wolfssl_v2.log`, `findings/honggfuzz/wolfssl/run_honggfuzz_wolfssl.log`
 - Corpus AFL++ copiado a directorio separado `corpus/cjson_afl/` (evita condición de carrera con libFuzzer, ver R9)
 - Versiones exactas de binarios y flags documentadas en este informe
 
@@ -105,7 +105,7 @@ El harness wolfSSL (`harnesses/fuzz_wolfssl_x509.c`) usa asignación en heap par
 | **Peak RSS** | **448 MB** | **430 MB** | **8 MB** |
 | Corpus semilla | 146 certs DER | 146 certs DER | 146 certs DER |
 
-> **Nota instrumentación AFL++**: La primera campaña AFL++ wolfSSL (220 s) usó `libwolfssl.a` compilada con clang estándar, capturando solo 3 edges (del harness). Para la campaña válida se recompiló la librería con `CC=afl-clang-fast`; el binario resultante (`fuzz_wolfssl_afl_v2`) capturó 399 tuples en el primer test unitario. Esfuerzo adicional de build: ~15 min (make clean + configure + make -j12).
+> **Nota instrumentación AFL++**: La primera campaña AFL++ wolfSSL (`findings/afl/wolfssl_noinst/`, 220 s) usó `libwolfssl.a` compilada con clang estándar, capturando solo 3 edges (del harness). Para la campaña válida (`findings/afl/wolfssl_instrumented/`) se recompiló la librería con `CC=afl-clang-fast`; el binario resultante capturó 399 tuples en el primer test unitario. Esfuerzo adicional de build: ~15 min (make clean + configure + make -j12). Ver [`findings/afl/README.md`](../findings/afl/README.md).
 >
 > **Nota cobertura**: 1.578 SanCov edges (libFuzzer) y 907 AFL++ tuples no son directamente comparables — sistemas de instrumentación distintos sobre el mismo código fuente.
 >

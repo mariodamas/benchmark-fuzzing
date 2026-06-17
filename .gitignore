@@ -1,0 +1,11 @@
+# Claude Code session data
+.claude/
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# Editor artefacts
+*.swp
+*.swo
+*~

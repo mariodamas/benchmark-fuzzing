@@ -1,3 +1,26 @@
-# Fuzzing corpora
+# ── Fuzzing corpora (demasiado voluminosos para el repositorio) ──────────────
 corpus/
 targets/**/corpus*/
+
+# ── Binarios compilados (generados por los pasos de build del README) ────────
+build/
+
+# ── Datos de cobertura en crudo (generados por llvm-profdata) ────────────────
+coverage/*.profraw
+coverage/*.profdata
+
+# ── Honggfuzz: código fuente completo (>30 MB; instalado localmente) ─────────
+targets/honggfuzz/
+
+# ── Artefactos de crash de Honggfuzz fuera del directorio findings/ ──────────
+*.fuzz
+HONGGFUZZ.REPORT.TXT
+
+# ── Artefactos de build de wolfSSL (make distclean los elimina, pero por si acaso)
+targets/wolfssl/src/.libs/
+targets/wolfssl/**/*.o
+targets/wolfssl/**/*.a
+targets/wolfssl/**/*.la
+targets/wolfssl/**/*.lo
+targets/wolfssl/Makefile
+targets/wolfssl/wolfssl/options.h
